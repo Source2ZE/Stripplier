@@ -534,8 +534,16 @@ def findSolidBoundary(ent_name, ent_origin):
 
 #create a solid for a brush
 def createSolid(ent):
+    mins = None
+    maxs = None
+    target = None
+    try:
+        mins, maxs, target = findSolidBoundary(ent['targetname']['targetname'],ent['origin']['origin'])
+    #some added func ents may not have an origin stated within the stripper
+    except:
+        printLog('\n*** WARNING: A new func entity has not been given an origin - giving default origin of "0 0 0" instead ***')
+        mins, maxs, target = findSolidBoundary(ent['targetname']['targetname'],'0 0 0')
     printLog('\nThis entity will have a minimum and maximum boundary of:')
-    mins, maxs, target = findSolidBoundary(ent['targetname']['targetname'],ent['origin']['origin'])
     printLog('\t"mins" "'+str(mins['x'])+' '+str(mins['y'])+' '+str(mins['z'])+'"')
     printLog('\t"maxs" "'+str(maxs['x'])+' '+str(maxs['y'])+' '+str(maxs['z'])+'"')
     printLog('\nWhere the boundaries were provided in a stripper block for:')
@@ -551,7 +559,7 @@ def createSolid(ent):
                         printLog('  "'+m+'" "'+t[m][t[m]['k']]+'"')
     else:
         printLog('\t*** WARNING: No other stripper block provided boundaries for this entity ***')
-        printLog('\tAn oversight may be present with this stripper!')
+        printLog('\tA default bounday of +-100 in every dimension from the entity origin is given instead')
     solid = {'k':'solid','_':'','editor':stripperEditor({})}
     #assume rectangular solid being created
     for f in range(6):
@@ -854,7 +862,7 @@ def stripperApply():
         printLog('\n')
         count += 1
 
-printConsole('Stripplier v1')
+printConsole('Stripplier v1.1')
 printConsole('========================================')
 printConsole('Instructions:')
 printConsole('\t1) Create an input folder relative to .exe path')
