@@ -14,8 +14,11 @@ For each stripper block the script executes, it will also write relevant informa
 - Details of each stripper block
 - Relevant KV's of all entities targetted by the stripper block
 - The actions done on these entities
+
 If the script fails to apply a line of stripper, it will produce a _WARNING:_ which you can filter by in the log file. This can include any invalid stripper fixes (e.g. deleting a non-existent KV) or stripper fixes that the script cannot resolve.
+
 If the script failes to apply the entie block of stripper, if will produce an **ERROR:**. These are fatal errors in which you should notify the creators with.
+
 _Note, the script may fail to produce a WARNING when it should have - always check to make sure if the stripper has been applied correctly!_
 ## Notes
 - The script will not check if all files present are valid and uncorrupted; double check if your stripper .cfg has no mistakes in it!
