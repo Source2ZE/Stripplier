@@ -695,12 +695,25 @@ def stripperModify(strip):
             try:
                 #value is regex format
                 if isRegex(strip['match:'][m][strip['match:'][m]['k']]):
-                    #not the ent we're looking for
-                    if not re.search(strip['match:'][m][strip['match:'][m]['k']][1:-1].lower(),ents[idx][m][ents[idx][m]['k']].lower()):
-                        skip = True
-                        break
-                    else:
-                        skip = False
+                    #search for normal kv first
+                    try:
+                        #not the ent we're looking for
+                        if not re.search(strip['match:'][m][strip['match:'][m]['k']][1:-1],ents[idx][m][ents[idx][m]['k']]):
+                            skip = True
+                            break
+                        else:
+                            skip = False
+                    #then search for connection kv
+                    except:
+                        try:
+                            for c in ents[idx]['connections']:
+                                if c != 'k' and c!= '_':
+                                    #the targetted ent has the kv we want
+                                    if re.search(strip['match:'][m][strip['match:'][m]['k']][1:-1],ents[idx]['connections'][c][ents[idx]['connections'][c]['k']]):
+                                        skip = False
+                                        break
+                        except:
+                            skip = True
                 else:
                     #normal kv
                     if strip['match:'][m][strip['match:'][m]['k']].find('') == -1 and strip['match:'][m][strip['match:'][m]['k']].find(',') == -1:
