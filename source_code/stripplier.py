@@ -132,7 +132,7 @@ def appendDict(dic):
         ents.append(dic)
     if dic['k'] == 'cameras':
         cameras.append(dic)
-    if dic['k'] == 'cordons':
+    if dic['k'] == 'cordons' or dic['k'] == 'cordon':
         cordons.append(dic)
 
 def readVMF(name):
