@@ -456,6 +456,23 @@ def findSolidBoundary(ent_name, ent_origin):
     for s in stripper:
         if mins and maxs:
             break
+        #try to look at the same stripper block first
+        try:
+            if s['targetname']['targetname'] == ent_name:
+                for l in s:
+                    try:
+                        if s[l][s[l]['k']].find('!self') == 0 and s[l][s[l]['k']].find('mins') != -1:
+                            mins = strToVec(findCoordFromInsert(s[l][s[l]['k']][s[l][s[l]['k']].find('mins')+5:]))
+                            if s not in target:
+                                target.append(s)
+                        elif s[l][s[l]['k']].find('!self') == 0 and s[l][s[l]['k']].find('maxs') != -1:
+                            maxs = strToVec(findCoordFromInsert(s[l][s[l]['k']][s[l][s[l]['k']].find('maxs')+5:]))
+                            if s not in target:
+                                target.append(s)
+                    except:
+                        pass
+        except:
+            pass
         try:
             del_idx = []
             #stripper is of modify: type
