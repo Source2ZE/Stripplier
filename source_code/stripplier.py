@@ -631,6 +631,41 @@ def stripperInsert(ent, insert, i):
         #print(ent['connections'])
     return ent
 
+#if a model number is being deleted, check if the same stripper defines a new boundary to substitue via insert:
+#returns if this has been successful or not
+def stripperDeleteModel(ent, insert):
+    origin = None
+    mins = None
+    maxs = None
+    del_idx = []
+    while not origin and not mins and not maxs:
+        for i in insert:
+            if i != 'k':
+                if insert[i][insert[i]['k']].find('mins') != -1:
+                    mins = strToVec(findCoordFromInsert(insert[i][insert[i]['k']][insert[i][insert[i]['k']].find('mins')+5:]))
+                    del_idx.append(i)
+                elif insert[i][insert[i]['k']].find('maxs') != -1:
+                    maxs = strToVec(findCoordFromInsert(insert[i][insert[i]['k']][insert[i][insert[i]['k']].find('maxs')+5:]))
+                    del_idx.append(i)
+                elif insert[i][insert[i]['k']].find('origin') != -1:
+                    origin = strToVec(findCoordFromInsert(insert[i][insert[i]['k']][insert[i][insert[i]['k']].find('origin')+6:]))
+                    del_idx.append(i)
+        break
+    if origin and mins and maxs:
+        mins = vecAdd(mins, origin, True)
+        maxs = vecAdd(maxs, origin, True)
+        ent['origin']['origin'] = vecToStr(origin)
+        printLog('\nDeleting the model kv by replacing the volume with following boundaries:')
+        printLog('\t"origin" "'+str(origin['x'])+' '+str(origin['y'])+' '+str(origin['z'])+'"')
+        printLog('\t"mins" "'+str(mins['x'])+' '+str(mins['y'])+' '+str(mins['z'])+'"')
+        printLog('\t"maxs" "'+str(maxs['x'])+' '+str(maxs['y'])+' '+str(maxs['z'])+'"')
+        for idx, d in enumerate(del_idx[::-1]):
+            del insert[d]
+        ent['solid'] = createSolid(ent,mins,maxs,None)
+        return ent, insert
+    else:
+        return None
+
 #perform modify:
 def stripperStrip(ent,insert,replace,delete):
     #perform delete:
@@ -649,6 +684,14 @@ def stripperStrip(ent,insert,replace,delete):
                             del ent['connections'][d]
                     #normal kv
                     elif delete[d][delete[d]['k']].find('') == -1 and delete[d][delete[d]['k']].find(',') == -1:
+                        if d == 'model':
+                            try:
+                                ent['solid']#check if the ent already has a valid volume
+                                ent['origin']#check if the ent already has an origin
+                                ent, insert = stripperDeleteModel(ent, insert)
+                                continue
+                            except:
+                                pass
                         del ent[d]
                     #connections kv
                     else:
