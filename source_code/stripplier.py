@@ -749,7 +749,8 @@ def stripperModify(strip):
                 continue
             if m == 'hammerid':
                 m = 'id'
-            if m == 'k':
+            elif m == 'model' and strip['match:'][m][strip['match:'][m]['k']][0] == '*' and findEntFunc(strip['match:'][m][strip['match:'][m]['k']]) == ents[idx]:
+                skip = False
                 continue
             try:
                 #value is regex format
