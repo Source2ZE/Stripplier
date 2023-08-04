@@ -12,13 +12,11 @@ world = []
 ents = []
 cameras = []
 cordons = []
-cfg_blank_limit = 5 #amount of blank newlines to allow from cfg before exiting
-bsp_blank_limit = 5 #amount of blank newlines to allow from bsp before exiting
 
 #func for testing
 def findConflictingLine(name):
-    with open(name+'.vmf','r') as file1:
-        with open(name+'_strip.vmf','r') as file2:
+    with open('input/'+name+'.vmf','r') as file1:
+        with open('output/'+name+'_strip.vmf','r') as file2:
             count = 1
             while True:
                 row1 = file1.readline()
@@ -143,11 +141,11 @@ def readFile(name):
         dic = None
         parent = []
         gen = 0#tracks generations of scopes
-        while True:
-            row = file.readline()
+        for row in file:
+            #row = file.readline()
             row = row.strip()
-            if not row:
-                break
+            #if not row:
+            #    break
             if row == '{':
                 gen += 1
             elif row == '}':
@@ -236,32 +234,22 @@ def readStripper(name):
         dic = None
         parent = []
         gen = 0
-        count = 0
-        while True:
-            row = file.readline()
+        for row in file:
             row = row.strip()
-            if not row:
-                count += 1
-                if count > cfg_blank_limit:
-                    #account for strippers that may have multiple consecutive newlines between blocks
-                    break;
+            #ignore comments (may require more character filters)
+            if len(row) < 1 or row[0]==';' or row[0]=='/':
                 continue
-            else:
-                count = 0
-                #ignore comments (may require more character filters)
-                if row[0]==';' or row[0]=='/':
-                    continue
-                if row == '{':
-                    gen += 1
-                elif row == '}':
-                    gen -= 1
-                    if(gen > 0):
-                        parent[-1][returnUniqueName(parent[-1],dic['k'])] = dic
-                        dic = parent.pop()
-                    else:
-                        stripper.append(dic)
-                        dic = None
-                #this will be the name of a subscope (e.g. match:)
+            if row == '{':
+                gen += 1
+            elif row == '}':
+                gen -= 1
+                if(gen > 0):
+                    parent[-1][returnUniqueName(parent[-1],dic['k'])] = dic
+                    dic = parent.pop()
+                else:
+                    stripper.append(dic)
+                    dic = None
+            #this will be the name of a subscope (e.g. match:)
                 elif row.find(':')!=-1 and row.find('"')==-1:
                     if gen > 0:
                         parent.append(dic)
@@ -295,21 +283,11 @@ def fixMissingConnectionDelay(v):
 bsp = []
 def readBSP(name):
     with open('input/'+name+'.bsp','r',errors='ignore') as file:
-        count = 0
-        while True:
-            row = file.readline()
+        for row in file:
             row = row.strip()
             #skip any gibberish and empty newlines
             if len(row)>0 and (row[0]=='"' or row[0]=='{' or row[0]=='}'):
                 bsp.append(row)
-            if not row:
-                #allow certain number of consecutive newlines
-                if(count > 5):
-                    break
-                else:
-                    count += 1
-            else:
-                count = 0
 
 #print info of match: block in a stripper block
 def printStripperMatch(strip):
