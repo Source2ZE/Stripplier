@@ -539,33 +539,31 @@ def findSolidBoundary(ent_name, ent_origin):
     return mins, maxs, target
 
 #create a solid for a brush
-def createSolid(ent):
-    mins = None
-    maxs = None
-    target = None
-    try:
-        mins, maxs, target = findSolidBoundary(ent['targetname']['targetname'],ent['origin']['origin'])
-    #some added func ents may not have an origin stated within the stripper
-    except:
-        printLog('\n*** WARNING: A new func entity has not been given an origin - giving default origin of "0 0 0" instead ***')
-        mins, maxs, target = findSolidBoundary(ent['targetname']['targetname'],'0 0 0')
-    printLog('\nThis entity will have a minimum and maximum boundary of:')
-    printLog('\t"mins" "'+str(mins['x'])+' '+str(mins['y'])+' '+str(mins['z'])+'"')
-    printLog('\t"maxs" "'+str(maxs['x'])+' '+str(maxs['y'])+' '+str(maxs['z'])+'"')
-    printLog('\nWhere the boundaries were provided in a stripper block for:')
-    if len(target)>0:
-        for t in target:
-            try:
-                for m in t['match:']:
-                    if m != 'k':
-                        printLog('  "'+m+'" "'+t['match:'][m][t['match:'][m]['k']]+'"')
-            except:
-                for m in t:
-                    if m =='classname' or m =='targetname' or m == 'origin' or m == 'id':
-                        printLog('  "'+m+'" "'+t[m][t[m]['k']]+'"')
-    else:
-        printLog('\t*** WARNING: No other stripper block provided boundaries for this entity ***')
-        printLog('\tA default bounday of +-100 in every dimension from the entity origin is given instead')
+def createSolid(ent,mins=None,maxs=None,target=None):
+    if not mins and not maxs and not target:
+        try:
+            mins, maxs, target = findSolidBoundary(ent['targetname']['targetname'],ent['origin']['origin'])
+        #some added func ents may not have an origin stated within the stripper
+        except:
+            printLog('\n*** WARNING: A new func entity has not been given an origin - giving default origin of "0 0 0" instead ***')
+            mins, maxs, target = findSolidBoundary(ent['targetname']['targetname'],'0 0 0')
+        printLog('\nThis entity will have a minimum and maximum boundary of:')
+        printLog('\t"mins" "'+str(mins['x'])+' '+str(mins['y'])+' '+str(mins['z'])+'"')
+        printLog('\t"maxs" "'+str(maxs['x'])+' '+str(maxs['y'])+' '+str(maxs['z'])+'"')
+        printLog('\nWhere the boundaries were provided in a stripper block for:')
+        if len(target)>0:
+            for t in target:
+                try:
+                    for m in t['match:']:
+                        if m != 'k':
+                            printLog('  "'+m+'" "'+t['match:'][m][t['match:'][m]['k']]+'"')
+                except:
+                    for m in t:
+                        if m =='classname' or m =='targetname' or m == 'origin' or m == 'id':
+                            printLog('  "'+m+'" "'+t[m][t[m]['k']]+'"')
+        else:
+            printLog('\t*** WARNING: No other stripper block provided boundaries for this entity ***')
+            printLog('\tA default bounday of +-100 in every dimension from the entity origin is given instead')
     solid = {'k':'solid','_':'','editor':stripperEditor({})}
     #assume rectangular solid being created
     for f in range(6):
@@ -839,7 +837,7 @@ def stripperAdd(strip):
         ent['connections'] = connections
         #if it is a trigger_ or func_, a 3d brush is also necessary
         if ent['classname']['classname'].find('trigger_') == 0 or ent['classname']['classname'].find('func_') == 0:
-            ent['solid'] = createSolid(ent)
+            ent['solid'] = createSolid(ent,None,None,None)
     #need to duplicate from an existing ent
     else:
         printLog('\nThis entity will copy the solid(/brush) of the following entity:')
