@@ -94,7 +94,6 @@ def writeScope(file, dic, gen):
     if not dic:
         file.write(appendTab('}',gen))
     for row in dic:
-        #print(row, type(dic[row])==dict,len(dic[row]))
         if row == '_':
             continue
         if type(dic[row])==dict:
@@ -136,7 +135,7 @@ def appendDict(dic):
     if dic['k'] == 'cordons':
         cordons.append(dic)
 
-def readFile(name):
+def readVMF(name):
     with open('input/'+name+'.vmf', 'r') as file:
         dic = None
         parent = []
@@ -250,23 +249,23 @@ def readStripper(name):
                     stripper.append(dic)
                     dic = None
             #this will be the name of a subscope (e.g. match:)
-                elif row.find(':')!=-1 and row.find('"')==-1:
-                    if gen > 0:
-                        parent.append(dic)
-                    dic = {'k': row}
+            elif row[-1] == ':' and row.find('"')==-1:
+                if gen > 0:
+                    parent.append(dic)
+                dic = {'k': row}
+            else:
+                k,v = findKV(row)
+                #fix small quirk between vmf and stripper formatting
+                if k == 'hammerid':
+                    k = 'id'
+                if v.find('') == -1 and v.find(',') == -1:
+                    0
                 else:
-                    k,v = findKV(row)
-                    #fix small quirk between vmf and stripper formatting
-                    if k == 'hammerid':
-                        k = 'id'
-                    if v.find('') == -1 and v.find(',') == -1:
-                        0
-                    else:
-                        #fix connection stripper lines that does not specify a delay value
-                        v = fixMissingConnectionDelay(v)
-                    unique = returnUniqueName(dic,k)
-                    dic[unique] = {'k':k}
-                    dic[unique][k] = v
+                    #fix connection stripper lines that does not specify a delay value
+                    v = fixMissingConnectionDelay(v)
+                unique = returnUniqueName(dic,k)
+                dic[unique] = {'k':k}
+                dic[unique][k] = v
 
 #fix potential strippers that does not have any value for the delay value
 def fixMissingConnectionDelay(v):
@@ -280,13 +279,26 @@ def fixMissingConnectionDelay(v):
         if v[cidx] in delim:
             count += 1
 
+def validBSPLine(line):
+    if len(line) < 1:
+        return False
+    elif len(line) == 1:
+        if line == '{' or line == '}':
+            return True
+        else:
+            return False
+    elif line.count('"') == 4 and line[0] == '"' and line[-1] == '"':
+        return True
+    else:
+        return False
+
 bsp = []
 def readBSP(name):
     with open('input/'+name+'.bsp','r',errors='ignore') as file:
         for row in file:
             row = row.strip()
             #skip any gibberish and empty newlines
-            if len(row)>0 and (row[0]=='"' or row[0]=='{' or row[0]=='}'):
+            if validBSPLine(row):
                 bsp.append(row)
 
 #print info of match: block in a stripper block
@@ -310,7 +322,7 @@ def printEntityInfo(ent):
         try:
             printLog('\t  "'+k+'" "'+ent[k][k]+'"')
         except:
-            0
+            pass
 
 #print kv's changed by stripper
 def printStripperModifications(strip):
@@ -387,7 +399,9 @@ def findEntFunc(model):
     origin = None
     #only search until hammerid and origin is found - this is enough to find the corresponding ent in .vmf
     while not hammerid or not origin:
-        #print(bsp[idx])
+        #failed to find an entity with the given model number
+        if bsp[idx] == '}':
+            return None
         if bsp[idx].find('hammerid') != -1:
             hammerid = bsp[idx][12:bsp[idx].find('"',13)]
         if bsp[idx].find('origin') != -1:
@@ -398,7 +412,7 @@ def findEntFunc(model):
             if e['id']['id'] == hammerid and e['origin']['origin'] == origin:
                 return e
         except:
-            0
+            pass
     return None
 
 #duplicate side of a solid
@@ -480,16 +494,13 @@ def findSolidBoundary(ent_name, ent_origin):
                 if mins and maxs:
                     break
                 if i != 'k' and s['insert:'][i][s['insert:'][i]['k']].find(ent_name) == 0:
-                    #print(s['insert:'][i][s['insert:'][i]['k']])
                     if s['insert:'][i][s['insert:'][i]['k']].find('mins') != -1:
                         mins = strToVec(findCoordFromInsert(s['insert:'][i][s['insert:'][i]['k']][s['insert:'][i][s['insert:'][i]['k']].find('mins')+5:]))
-                        #print('test')
                         del_idx.append(i)
                         if s not in target:
                             target.append(s)
                     if s['insert:'][i][s['insert:'][i]['k']].find('maxs') != -1:
                         maxs = strToVec(findCoordFromInsert(s['insert:'][i][s['insert:'][i]['k']][s['insert:'][i][s['insert:'][i]['k']].find('maxs')+5:]))
-                        #print('test')
                         del_idx.append(i)
                         if s not in target:
                             target.append(s)
@@ -516,7 +527,7 @@ def findSolidBoundary(ent_name, ent_origin):
                 for d in del_idx:
                     del s[d]
             except:
-                0
+                pass
     #if all fails then assign default volume of +-100 to each dimension
     if not mins or not maxs:
         mins = vecAdd(strToVec(ent_origin),{'x':-100,'y':-100,'z':-100},True)
@@ -628,7 +639,6 @@ def stripperInsert(ent, insert, i):
         except:
             ent['connections'] = {'k':'connections','_':''}
         ent['connections'][returnUniqueName(ent['connections'],insert[i]['k'])] = {'k':insert[i]['k'],insert[i]['k']:insert[i][insert[i]['k']]}
-        #print(ent['connections'])
     return ent
 
 #if a model number is being deleted, check if the same stripper defines a new boundary to substitue via insert:
@@ -726,6 +736,8 @@ def stripperModify(strip):
         skip = True
         for m in strip['match:']:
             #small quirk between vmf and stripper formats
+            if m == 'k':
+                continue
             if m == 'hammerid':
                 m = 'id'
             if m == 'k':
@@ -741,6 +753,7 @@ def stripperModify(strip):
                             break
                         else:
                             skip = False
+                            continue
                     #then search for connection kv
                     except:
                         try:
@@ -749,9 +762,10 @@ def stripperModify(strip):
                                     #the targetted ent has the kv we want
                                     if re.search(strip['match:'][m][strip['match:'][m]['k']][1:-1],ents[idx]['connections'][c][ents[idx]['connections'][c]['k']]):
                                         skip = False
-                                        break
+                                        continue
                         except:
                             skip = True
+                            break
                 else:
                     #normal kv
                     if strip['match:'][m][strip['match:'][m]['k']].find('') == -1 and strip['match:'][m][strip['match:'][m]['k']].find(',') == -1:
@@ -760,9 +774,8 @@ def stripperModify(strip):
                             skip = True
                             break
                         else:
-                            #print(ents[idx][m][ents[idx][m]['k']])
-                            #print(strip['match:'][m],'bbb')
                             skip = False
+                            continue
                    #connection kv
                     else:
                         #not the target ent
@@ -771,6 +784,7 @@ def stripperModify(strip):
                             break
                         else:
                             skip = False
+                            continue
             except:
                 skip = True
                 break
@@ -832,7 +846,7 @@ def stripperAdd(strip):
         target = findEntFunc(strip['model']['model'])
         #model number does not exist in bsp
         if not target:
-            printLog('\n*** ERROR: a solid(/brush) with model number "'+strip['model']['model']+'has not been found ***')
+            printLog('\n*** ERROR: a solid(/brush) with model number "'+strip['model']['model']+'" has not been found ***')
         printEntityInfo(target)
         #duplicate info about brush solid
         ent = duplicateEntFunc(target,strip['origin']['origin'])
@@ -913,7 +927,7 @@ def stripperApply():
         printLog('\n')
         count += 1
 
-printConsole('Stripplier v1.1')
+printConsole('Stripplier v1.2')
 printConsole('========================================')
 printConsole('Instructions:')
 printConsole('\t1) Create an input folder relative to .exe path')
@@ -950,7 +964,7 @@ printLog("========================================")
 
 try:
     printConsole("Attempting to read "+mapname+".vmf...")
-    readFile(mapname)
+    readVMF(mapname)
 except:
     printConsole("ERROR: Could not find "+mapname+".vmf; make sure a valid vmf with the correct name and letter cases is present!")
     printLog("ERROR: "+mapname+".vmf not found")
