@@ -420,12 +420,19 @@ def duplicateSolidSide(side):
     dupe = {}
     for k in side:
         if k != 'id':
+            #skip h++ exclusive properties for backwards compatiability
+            try:
+                if k == 'vertices_plus':
+                    continue
+            except:
+                pass
             if k == '_':
                 dupe[k] = ''
             elif k == 'k':
                 dupe[k] = 'side'
             elif len(side[k]) <= 2:
                 dupe[k] = {'k':side[k]['k'],side[k]['k']:side[k][side[k]['k']]}
+            #vertices_plus block is h++ specific feature, this will be skipped in normal non-h++ vmf
             else:
                 dupe[k] = {'k':'vertices_plus','_':''}
                 for v in side[k]:
@@ -451,9 +458,13 @@ def duplicateEntFunc(ent, new_origin):
         else:
             new['solid'][row] = duplicateSolidSide(ent['solid'][row])
             new['solid'][row]['plane'] = {'k':'plane','plane':shiftPlane(ent['solid'][row]['plane']['plane'],dist)}
-            for v in new['solid'][row]['vertices_plus']:
-                if v != 'k' and v != '_':
-                    new['solid'][row]['vertices_plus'][v]['v'] = vecToStr(vecAdd(strToVec(new['solid'][row]['vertices_plus'][v]['v']),dist,True))
+            #if vmf uses h++ features, try to copy the block
+            try:
+                for v in new['solid'][row]['vertices_plus']:
+                    if v != 'k' and v != '_':
+                        new['solid'][row]['vertices_plus'][v]['v'] = vecToStr(vecAdd(strToVec(new['solid'][row]['vertices_plus'][v]['v']),dist,True))
+            except:
+                pass
     new['strippered'] = {'k':'strippered','strippered':'1'}
     return new
 
