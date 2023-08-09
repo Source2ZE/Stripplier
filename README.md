@@ -9,6 +9,10 @@ The script reads a .vmf, .bsp, and .cfg of the same name from an input folder di
 3) Enter the name of the map when prompted in the console
    - Type in the map name only without any file extensions
 4) If successful, the script will create a strippered .vmf and a log file in a separate output folder
+## Standalone .exe false-positive flagging as virus
+The standalone .exe may cause your anti-virus software / windows defender to flag it as a virus. This is unfortunately [unavoidable when compiling into a single file](https://github.com/pyinstaller/pyinstaller/issues/6754). To remedy this (or if you prefer to play it safe - very understandable), a separate file is included with release that has an .exe file and its dependencies in a single .zip file - this .exe has a suffix of `-d`. The usage is same as the standalone .exe, but you have to make sure all dependencies does not get removed/moved elsewhere.
+
+If the dependent .exe still gets flagged as virus, then you can always run the source code `stripplier.py` as is.
 ## Navigating the log
 For each stripper block the script executes, it will also write relevant information to the log file. This includes but not limited to:
 - Details of each stripper block
@@ -25,5 +29,7 @@ _Note, the script may fail to produce a WARNING when it should have - always che
 - The script will not work in all cases, especially if a stripper block uses somewhat niche techniques. Whenever applicable, an error or a warning is given so that these stripper fixes can be done manually
 - The strippered .vmf may crash your hammer by an exception error - you can simply reopen the strippered .vmf
   - For this reason, you should save the strippered .vmf before doing any further modifications - hammer needs to assign id to any newly created entities
+  - 
 and most importantly,
+
 - The script is still in development, so if you encounter any fatal errors or have a suggestion then you can comment about those here
