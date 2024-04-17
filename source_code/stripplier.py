@@ -1288,7 +1288,9 @@ def stripperAdd(strip):
                 else:
                     connections[k] = {'k':key, key:value}
         ent['editor'] = stripperEditor({})
-        ent['connections'] = connections
+        #append connection dict if a/multiple connection kv exist(s)
+        if(len(connections)>1):
+            ent['connections'] = connections
         #if it is a trigger_ or func_, a 3d brush is also necessary
         if ent['classname']['classname'].find('trigger_') == 0 or ent['classname']['classname'].find('func_') == 0:
             errorWriteLog('The new entity is a func entity - attempting to find a suitable volume')
@@ -1320,7 +1322,7 @@ def stripperAdd(strip):
                 else:
                     connections[k] = {'k':key, key:value}
         #append connection dict if a/multiple connection kv exist(s)
-        if len(connections) > 2:
+        if(len(connections)>1):
             ent['connections'] = connections
     ent['k'] = 'entity'
     ent['strippered'] = {'k':'strippered','strippered':'1'}
