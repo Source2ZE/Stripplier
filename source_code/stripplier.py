@@ -1223,7 +1223,12 @@ def stripperStrip(ent_hash,insert,replace,delete):
         errorWriteLog('Start to apply replace:')
         for r in replace:
             stripperReplace(ent,replace,r)
-    ent['editor'] = stripperEditor(ent['editor'])
+    #Add messages about stripplier if the ent already makes use of hammer editor
+    #features
+    try:
+        ent['editor'] = stripperEditor(ent['editor'])
+    except:
+        pass
     ent['strippered'] = {'k':'strippered','strippered':'1'}
 
 #find ents matching with match: and perform modify: on targetted ents
@@ -1385,7 +1390,7 @@ def stripperApply():
 #    INIT    #
 ##############
 
-printConsole('Stripplier v2')
+printConsole('Stripplier v2.0.1')
 printConsole('Made for Source 2 Zombie Escape (S2ZE) <https://github.com/Source2ZE>')
 printConsole('========================================')
 printConsole('Instructions:')
