@@ -4,7 +4,7 @@
 # Made for Source 2 Zombie Escape (S2ZE) Project
 # https://github.com/Source2ZE/Stripplier
 # 
-# Current version: 2.0 (8th August 2023)
+# Current version: 2.0.2 (1st January 2025)
 # Created by: lameskydiver / chinny (lameskydiver on discord)
 # 
 # LICENSE: MIT License
@@ -182,7 +182,11 @@ def findKV(row):
         if count==0:
             k = row[idx+1:row.find('"',idx+1)]
         if count==2:
-            v = row[idx+1:row.find('"',idx+1)]
+            if (row.find('"',idx+1)) != -1:
+                v = row[idx+1:row.find('"',idx+1)]
+            #if this row is part of a newlined keyvalue
+            else:
+                v = row[idx+1:]
         count += 1
         idx = row.find('"',idx+1)
     return k, v
@@ -274,13 +278,35 @@ def appendDict(dic):
 
 def readVMF(name):
     with open('input/'+name+'.vmf', 'r') as file:
+        newline_warning = False
         dic = None
         parent = []
         gen = 0#tracks generations of scopes
         ent_hash = 0
+        new_line = False
         for row in file:
             row = row.strip()
-            if row == '{':
+            if new_line is True:
+                if (row.count('"')==1):
+                    k,v = getKV(dic.popitem()[1])
+                    v = v+'\\n'+row[0:row.find('"')]
+                    unique = returnUniqueName(dic,k)
+                    dic[unique] = {'k':k}
+                    dic[unique][k] = v
+                    new_line = False
+                    
+                elif (row.count('"')==0):
+                    k,v = getKV(dic.popitem()[1])
+                    unique = returnUniqueName(dic,k)
+                    dic[unique] = {'k':k}
+                    dic[unique][k] = v + '\\n' + row
+                else:
+                    printLog("\n*** ERROR: Stripplier has detected an erroneous line in the .vmf; printing last read line... ***")
+                    printLog("\t'"+row+"'")
+                    printLog("Stripplier may now be unstable - tread with caution!")
+                    dic.popitem()
+                    new_line = False
+            elif row == '{':
                 gen += 1
             elif row == '}':
                 gen -= 1
@@ -301,6 +327,14 @@ def readVMF(name):
                     parent.append(dic)
                 dic = {'k': row}
             else:
+                #newline '\n' detected (CSS vmf) - notify and address issue
+                if(row.count('"')==3):
+                    if newline_warning is False:
+                        printConsole("Newline '\\n' detected: Stripplier will attempt to convert")
+                        printConsole("Note: Stripplier natively supports only CS:GO .vmf formats - tread with caution!")
+                        printLog("Newline detected in .vmf...")
+                        newline_warning = True
+                    new_line = True
                 k,v = findKV(row)
                 unique = returnUniqueName(dic,k)
                 dic[unique] = {'k':k}
@@ -1390,7 +1424,7 @@ def stripperApply():
 #    INIT    #
 ##############
 
-printConsole('Stripplier v2.0.1')
+printConsole('Stripplier v2.0.2')
 printConsole('Made for Source 2 Zombie Escape (S2ZE) <https://github.com/Source2ZE>')
 printConsole('========================================')
 printConsole('Instructions:')
@@ -1439,9 +1473,11 @@ except:
     printLog("*** ERROR: "+mapname+".vmf not found ***")
     errorWrite("*** ERROR: "+mapname+".vmf not found ***",'read')
     quitProgram(False)
-printLog(mapname+".vmf found")
+printLog(mapname+".vmf read")
+
 
 printConsole('-----')
+
 try:
     printConsole("Attempting to read "+mapname+".bsp...")
     readBSP(mapname)
@@ -1450,9 +1486,10 @@ except:
     printLog("*** ERROR: "+mapname+".bsp not found ***")
     errorWrite("*** ERROR: "+mapname+".bsp not found ***",'bsp')
     quitProgram(False)
-printLog(mapname+".bsp found")
+printLog(mapname+".bsp read")
 
 printConsole('-----')
+
 try:
     printConsole("Attempting to read "+mapname+".cfg...")
     readStripper(mapname)
@@ -1461,7 +1498,7 @@ except:
     printLog("*** ERROR: "+mapname+".cfg not found ***")
     errorWrite("*** ERROR: "+mapname+".cfg not found ***",'cfg')
     quitProgram(False)
-printLog(mapname+".cfg found")
+printLog(mapname+".cfg read")
 
 printLog("========================================")
 printConsole("========================================")
